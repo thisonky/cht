@@ -134,7 +134,7 @@ bot.on('callback_query', async (ctx) => {
                 const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
 
                 // Removed HELP message to only send START message after language selection
-                ctx.reply(langData.START);
+                ctx.replyWithHTML(`<i>${langData.START}</i>`);
             } catch (error) {
                 console.error('Error loading language file:', error);
                 ctx.reply('Failed to load the selected language. Please try again.');
