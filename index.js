@@ -37,9 +37,12 @@ bot.command('bug', (ctx) => {
     const userLang = userLanguages.get(ctx.from.id) || 'EN'; // Default to EN if no language is set
     const langFilePath = `./src/config/lang/${userLang}.json`;
     const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+
+    const inlineText = userLang === 'EN' ? '🧑‍💻 Contact Admin' : '🧑‍💻 Hubungi Admin'; // Dynamic inline text based on language
+
     ctx.reply(langData.CONTRIBUTE, {
         reply_markup: {
-            inline_keyboard: [[{ text: '🧑‍💻 Hubungi Admin', url: 'https://t.me/KEKprojects_bot' }]]
+            inline_keyboard: [[{ text: inlineText, url: 'https://t.me/KEKprojects_bot' }]]
         }
     });
 });
@@ -77,10 +80,13 @@ bot.command('exit', (ctx) => {
     Matchmaker.exit(id)
 })
 
-bot.command('users', (ctx) => {
-    let id = ctx.message.chat.id
-    Matchmaker.currentActiveUser(id)
-})
+bot.command('users', async (ctx) => {
+    const userLang = userLanguages.get(ctx.from.id) || 'EN'; // Default to EN if no language is set
+    const langFilePath = `./src/config/lang/${userLang}.json`;
+    const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+    const id = ctx.message.chat.id;
+    await Matchmaker.currentActiveUser(id, langData); // Pass the language data to the method
+});
 
 bot.on('text', (ctx) => {
     let id = ctx.message.chat.id
