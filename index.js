@@ -1,6 +1,8 @@
 require('dotenv').config()
 require('./src/config/database')
 
+const fs = require('fs'); // Add this at the top to use fs for reading files
+
 const text = require(`./src/config/lang/${process.env.LANGUAGE}`)
 
 const express = require('express')
@@ -113,11 +115,13 @@ bot.on('callback_query', (ctx) => {
             const selectedLanguage = query[1];
             if (selectedLanguage === 'EN' || selectedLanguage === 'ID') {
                 ctx.reply(`Language set to ${selectedLanguage === 'EN' ? 'English' : 'Bahasa Indonesia'}`);
-                // Update the language dynamically
-                const text = require(`./src/config/lang/${selectedLanguage}`);
+
+                // Dynamically load the language file using fs
+                const langFilePath = `./src/config/lang/${selectedLanguage}.json`;
+                const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
 
                 // Proceed to the help menu
-                ctx.reply(text.HELP);
+                ctx.reply(langData.HELP);
             } else {
                 ctx.reply('Invalid language selection.');
             }
