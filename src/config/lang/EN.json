@@ -1,6 +1,6 @@
 {
-	"START": "👋 Hello, Welcome to anonymous chat bot\n\n/help to see a list of commands\n\nSend me text, links, gifs, stickers, photos, videos or voice messages and i will anonymously forward them to your partner chat.",
-	"HELP": "/find find a chat friend\n/next stop chatting and find another friend\n/stop stop chatting\n/exit stop looking for a chat friend\n\n/bug contribute to the project/report a bug\n\n/ping check bot status\n/users see the number of active users currently",
+	"START": "👋 Hello, Welcome to anonymous chat bot\n\n/help to see a list of commands.",
+	"HELP": "List of bot usage commands:\n\n/find find a chat friend\n/next stop chatting and find another friend\n/stop stop chatting\n/exit stop looking for a chat friend\n\n/bug contribute to the project/report a bug\n\n/ping check bot status\n/users see the number of active users currently\n\nSend me text, links, gifs, stickers, photos, videos or voice messages and i will anonymously forward them to your partner chat",
 	"CONTRIBUTE": "For those who want to contribute to the bot\n\nlike:\n- adding features\n- reporting bugs (bot not responding)\n-promotion inside the bot\n- etc.\n\nplease click the button below",
 	"PING": "Pongg 🏓",
 	"CREATE_ROOM": {
