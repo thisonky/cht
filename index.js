@@ -39,7 +39,7 @@ bot.command('bug', (ctx) => {
     const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
     ctx.reply(langData.CONTRIBUTE, {
         reply_markup: {
-            inline_keyboard: [[{ text: 'Open GitHub', url: 'https://github.com/Shiyinq/anonim-chat' }]]
+            inline_keyboard: [[{ text: '🧑‍💻 Hubungi Admin', url: 'https://t.me/KEKprojects_bot' }]]
         }
     });
 });
@@ -123,7 +123,9 @@ bot.on('callback_query', async (ctx) => {
             try {
                 const langFilePath = `./src/config/lang/${selectedLanguage}.json`;
                 const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
-                ctx.reply(langData.HELP);
+
+                // Removed HELP message to only send START message after language selection
+                ctx.reply(langData.START);
             } catch (error) {
                 console.error('Error loading language file:', error);
                 ctx.reply('Failed to load the selected language. Please try again.');
