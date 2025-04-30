@@ -1,7 +1,7 @@
 {
-	"START": "Selamat Datang di Anonim Chat\n\n/find mencari teman chat\n/next berhenti dari chat dan mencari teman lain\n/stop berhenti dari chat\n/exit berhenti mencari teman chat\n\n/ping mengecek status bot\n/users jumlah aktif user saat ini\n\n/contribute ikut berkontibusi ke project/lapor bug",
-	"HELP": "/find mencari teman chat\n/next berhenti dari chat dan mencari teman lain\n/stop berhenti dari chat\n/exit berhenti mencari teman chat\n\n/contribute ikut berkontibusi ke project/lapor bug",
-	"CONTRIBUTE": "Untuk teman\" jika ingin berkontribusi untuk botnya\n\nseperti: \n- menambah fitur\n- lapor bug\n- dll\n\nbisa pull request atau buat issue di GitHub",
+	"START": "Haloo Selamat Datang di Anonim Chat Bot\n\n/help untuk melihat daftar perintah",
+	"HELP": "/find mencari teman chat\n/next berhenti dari chat dan mencari teman lain\n/stop berhenti dari chat\n/exit berhenti mencari teman chat\n\n/bug ikut berkontibusi ke project/lapor bug\n\n/ping mengecek status bot\n/users melihat jumlah user aktif saat ini",
+	"CONTRIBUTE": "Untuk teman\" jika ingin berkontribusi untuk botnya\n\nseperti: \n- menambah fitur\n- lapor bug (bot tidak merespon)\n- dll\n\nsilahkan klik tombol dibawah ini",
 	"PING": "Pongg 🏓",
 	"CREATE_ROOM": {
 		"SUCCESS_1": "Teman chat ditemukan"

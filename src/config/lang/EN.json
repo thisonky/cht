@@ -1,7 +1,7 @@
 {
-	"START": "Welcome to Anonymous Chat\n\n/find to find a chat partner\n/next to stop chatting and find another partner\n/stop to stop chatting\n/exit to stop searching for a chat partner\n\n/ping to check bot status\n/users to see the number of active users\n\n/contribute to contribute to the project/report bugs",
-	"HELP": "/find to find a chat partner\n/next to stop chatting and find another partner\n/stop to stop chatting\n/exit to stop searching for a chat partner\n\n/contribute to contribute to the project/report bugs",
-	"CONTRIBUTE": "For those who want to contribute to the bot\n\nlike:\n- adding features\n- reporting bugs\n- etc.\n\nyou can pull request or create an issue on GitHub",
+	"START": "Hello Welcome to Anonymous Chat Bot\n\n/help to see a list of commands",
+	"HELP": "/find find a chat friend\n/next stop chatting and find another friend\n/stop stop chatting\n/exit stop looking for a chat friend\n\n/bug contribute to the project/report a bug\n\n/ping check bot status\n/users see the number of active users currently",
+	"CONTRIBUTE": "For those who want to contribute to the bot\n\nlike:\n- adding features\n- reporting bugs (bot not responding)\n- etc.\n\nplease click the button below",
 	"PING": "Pongg 🏓",
 	"CREATE_ROOM": {
 		"SUCCESS_1": "Chat partner found"

@@ -12,6 +12,9 @@ const port = process.env.PORT || 5001; // Changed default port to 5001
 const { Telegraf} = require('telegraf')
 const bot = new Telegraf(process.env.BOT_TOKEN)
 
+// Add a map to store user language preferences
+const userLanguages = new Map();
+
 const MatchMaker = require('./src/matchmaker')
 let Matchmaker = new MatchMaker()
 
@@ -30,13 +33,16 @@ bot.start((ctx) => {
     });
 });
 
-bot.command('contribute', (ctx) => {
-    ctx.reply(text.CONTRIBUTE, {
-		"reply_markup":{
-			"inline_keyboard": [[{"text":"Open GitHub", "url": 'https://github.com/Shiyinq/anonim-chat'}]]
-		}
-	})
-})
+bot.command('bug', (ctx) => {
+    const userLang = userLanguages.get(ctx.from.id) || 'EN'; // Default to EN if no language is set
+    const langFilePath = `./src/config/lang/${userLang}.json`;
+    const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+    ctx.reply(langData.CONTRIBUTE, {
+        reply_markup: {
+            inline_keyboard: [[{ text: 'Open GitHub', url: 'https://github.com/Shiyinq/anonim-chat' }]]
+        }
+    });
+});
 
 bot.command('help', (ctx) => {
     ctx.reply(text.HELP)
@@ -104,39 +110,29 @@ bot.on('video', (ctx) => {
     Matchmaker.connect(id, ['video', videoID])
 })
 
-bot.on('callback_query', (ctx) => {
-    console.log('Callback query data:', ctx.callbackQuery.data); // Log the raw callback data
+bot.on('callback_query', async (ctx) => {
+    let query = ctx.callbackQuery.data.split('_').map(item => item.trim());
+    console.log('Parsed query:', query);
 
-    let query = ctx.callbackQuery.data.split('-');
+    if (query[0] === 'lang') {
+        const selectedLanguage = query[1];
+        if (selectedLanguage === 'EN' || selectedLanguage === 'ID') {
+            userLanguages.set(ctx.from.id, selectedLanguage); // Save user language preference
+            ctx.reply(`Language set to ${selectedLanguage === 'EN' ? 'English' : 'Bahasa Indonesia'}`);
 
-    switch (query[0]) {
-        case 'lang':
-            console.log('Language selection callback received:', query); // Debugging log
-            const selectedLanguage = query[1];
-            if (selectedLanguage === 'EN' || selectedLanguage === 'ID') {
-                ctx.reply(`Language set to ${selectedLanguage === 'EN' ? 'English' : 'Bahasa Indonesia'}`);
-
-                // Dynamically load the language file using fs
+            try {
                 const langFilePath = `./src/config/lang/${selectedLanguage}.json`;
                 const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
-
-                // Proceed to the help menu
                 ctx.reply(langData.HELP);
-            } else {
-                ctx.reply('Invalid language selection.');
+            } catch (error) {
+                console.error('Error loading language file:', error);
+                ctx.reply('Failed to load the selected language. Please try again.');
             }
-            break;
-        case 'openPhoto':
-            let urlPhoto = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/photos/${query[1]}`;
-            ctx.deleteMessage().then(ctx.replyWithPhoto({ url: urlPhoto })).catch(err => console.log(err));
-            break;
-        case 'openVideo':
-            let urlVideo = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/videos/${query[1]}`;
-            ctx.deleteMessage().then(ctx.replyWithVideo({ url: urlVideo })).catch(err => console.log(err));
-            break;
-        default:
-            console.log('unknown');
-            break;
+        } else {
+            ctx.reply('Invalid language selection.');
+        }
+    } else {
+        ctx.reply('Unknown action. Please try again.');
     }
 });
 
