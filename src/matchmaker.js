@@ -9,26 +9,21 @@ const { Markup } = require('telegraf')
 const text = require(`./config/lang/${process.env.LANGUAGE}`)
 
 class MatchMaker {
-    init() {
-        setInterval(() => {
-            Queue.find({}, (err, queues) => {
-                if(err) {
-                    console.log(err)
-                } else {
-                    if(queues.length == 2) {
-                        let newParticipan = [];
-                        queues.map(q => {
-                            Queue.deleteOne({user_id: q.user_id}, (err) => {
-                                if(err) {
-                                    console.log(text.ERROR)
-                                }
-                            })
-                            newParticipan.push(q.user_id)
-                        })
-                        this.createRoom(newParticipan)
+    async init() {
+        setInterval(async () => {
+            try {
+                const queues = await Queue.find({}).limit(2);
+                if (queues.length === 2) {
+                    let newParticipan = [];
+                    for (const q of queues) {
+                        await Queue.deleteOne({ user_id: q.user_id });
+                        newParticipan.push(q.user_id);
                     }
+                    this.createRoom(newParticipan);
                 }
-            }).limit(2)
+            } catch (err) {
+                console.error(err);
+            }
         }, 2000);
     }
 

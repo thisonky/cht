@@ -110,8 +110,8 @@ bot.on('callback_query', (ctx) => {
             const selectedLanguage = query[1];
             if (selectedLanguage === 'EN' || selectedLanguage === 'ID') {
                 ctx.reply(`Language set to ${selectedLanguage === 'EN' ? 'English' : 'Bahasa Indonesia'}`);
-                // Here you can store the user's language preference in a database or memory
-                // For example: userLanguage[ctx.chat.id] = selectedLanguage;
+                // Update the language dynamically
+                const text = require(`./src/config/lang/${selectedLanguage}`);
 
                 // Proceed to the help menu
                 ctx.reply(text.HELP);
