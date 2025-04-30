@@ -1,7 +1,7 @@
 {
-	"START": "👋Halo, Selamat Datang di bot obrolan anonim\n\n/help untuk melihat cara penggunaan bot.\n\nKirimkan saya teks, tautan, gif, stiker, foto, video, atau pesan suara dan saya akan meneruskannya secara anonim ke partner obrolan anda.",
+	"START": "👋 Halo, Selamat Datang di bot obrolan anonim\n\n/help untuk melihat cara penggunaan bot.\n\nKirimkan saya teks, tautan, gif, stiker, foto, video, atau pesan suara dan saya akan meneruskannya secara anonim ke partner obrolan anda.",
 	"HELP": "/find mencari teman chat\n/next berhenti dari chat dan mencari teman lain\n/stop berhenti dari chat\n/exit berhenti mencari teman chat\n\n/bug ikut berkontibusi ke project/lapor bug\n\n/ping mengecek status bot\n/users melihat jumlah user aktif saat ini",
-	"CONTRIBUTE": "Untuk teman\" jika ingin berkontribusi untuk botnya\n\nseperti: \n- menambah fitur\n- lapor bug (bot tidak merespon)\n- dll\n\nsilahkan klik tombol dibawah ini",
+	"CONTRIBUTE": "Untuk teman\" jika ingin berkontribusi untuk botnya\n\nseperti: \n- menambah fitur\n- lapor bug (bot tidak merespon)\n-promosi di dalam bot\n- dll\n\nsilahkan klik tombol dibawah ini",
 	"PING": "Pongg 🏓",
 	"CREATE_ROOM": {
 		"SUCCESS_1": "Teman chat ditemukan"

@@ -40,7 +40,7 @@ bot.command('bug', (ctx) => {
 
     const inlineText = userLang === 'EN' ? '🧑‍💻 Contact Admin' : '🧑‍💻 Hubungi Admin'; // Dynamic inline text based on language
 
-    ctx.reply(langData.CONTRIBUTE, {
+    ctx.replyWithHTML(`<i>${langData.CONTRIBUTE}</i>`, {
         reply_markup: {
             inline_keyboard: [[{ text: inlineText, url: 'https://t.me/KEKprojects_bot' }]]
         }
@@ -51,14 +51,14 @@ bot.command('help', (ctx) => {
     const userLang = userLanguages.get(ctx.from.id) || 'EN'; // Default to EN if no language is set
     const langFilePath = `./src/config/lang/${userLang}.json`;
     const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
-    ctx.reply(langData.HELP);
+    ctx.replyWithHTML(`<i>${langData.HELP}</i>`);
 });
 
 bot.command('ping', (ctx) => {
     const start = new Date()
     const s = start / 1000 - ctx.message.date
-    ctx.replyWithHTML(`${text.PING} - <code>⏱ ${s.toFixed(3)} s</code>`)
-})
+    ctx.replyWithHTML(`${text.PING} - <code>⏱ ${s.toFixed(3)} s</code>`);
+});
 
 bot.command('find', (ctx) => {
     let id = ctx.message.chat.id
@@ -133,7 +133,7 @@ bot.on('callback_query', async (ctx) => {
                 const langFilePath = `./src/config/lang/${selectedLanguage}.json`;
                 const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
 
-                // Removed HELP message to only send START message after language selection
+                // Send START message with italicized text using HTML
                 ctx.replyWithHTML(`<i>${langData.START}</i>`);
             } catch (error) {
                 console.error('Error loading language file:', error);
