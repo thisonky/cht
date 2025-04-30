@@ -103,6 +103,8 @@ bot.on('video', (ctx) => {
 })
 
 bot.on('callback_query', (ctx) => {
+    console.log('Callback query data:', ctx.callbackQuery.data); // Log the raw callback data
+
     let query = ctx.callbackQuery.data.split('-');
 
     switch (query[0]) {
