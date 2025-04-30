@@ -7,7 +7,7 @@ const text = require(`./src/config/lang/${process.env.LANGUAGE}`)
 
 const express = require('express')
 const app = express()
-const port = process.env.PORT || 5000
+const port = process.env.PORT || 5001; // Changed default port to 5001
 
 const { Telegraf} = require('telegraf')
 const bot = new Telegraf(process.env.BOT_TOKEN)
