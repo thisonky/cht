@@ -16,8 +16,17 @@ let Matchmaker = new MatchMaker()
 Matchmaker.init()
 
 bot.start((ctx) => {
-    ctx.reply(text.START)
-})
+    ctx.reply('Please select your language / Silakan pilih bahasa Anda:', {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: 'English', callback_data: 'lang_EN' },
+                    { text: 'Bahasa Indonesia', callback_data: 'lang_ID' }
+                ]
+            ]
+        }
+    });
+});
 
 bot.command('contribute', (ctx) => {
     ctx.reply(text.CONTRIBUTE, {
@@ -94,22 +103,35 @@ bot.on('video', (ctx) => {
 })
 
 bot.on('callback_query', (ctx) => {
-    let query = ctx.callbackQuery.data.split('-')
-  
+    let query = ctx.callbackQuery.data.split('-');
+
     switch (query[0]) {
+        case 'lang':
+            const selectedLanguage = query[1];
+            if (selectedLanguage === 'EN' || selectedLanguage === 'ID') {
+                ctx.reply(`Language set to ${selectedLanguage === 'EN' ? 'English' : 'Bahasa Indonesia'}`);
+                // Here you can store the user's language preference in a database or memory
+                // For example: userLanguage[ctx.chat.id] = selectedLanguage;
+
+                // Proceed to the help menu
+                ctx.reply(text.HELP);
+            } else {
+                ctx.reply('Invalid language selection.');
+            }
+            break;
         case 'openPhoto':
-            let urlPhoto = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/photos/${query[1]}`
-            ctx.deleteMessage().then(ctx.replyWithPhoto({url: urlPhoto})).catch(err => console.log(err))
+            let urlPhoto = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/photos/${query[1]}`;
+            ctx.deleteMessage().then(ctx.replyWithPhoto({ url: urlPhoto })).catch(err => console.log(err));
             break;
         case 'openVideo':
-            let urlVideo = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/videos/${query[1]}`
-            ctx.deleteMessage().then(ctx.replyWithVideo({url: urlVideo})).catch(err => console.log(err))
+            let urlVideo = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/videos/${query[1]}`;
+            ctx.deleteMessage().then(ctx.replyWithVideo({ url: urlVideo })).catch(err => console.log(err));
             break;
         default:
-            console.log('unknown')
+            console.log('unknown');
             break;
     }
-})
+});
 
 bot.launch()
 
