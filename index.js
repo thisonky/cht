@@ -45,8 +45,11 @@ bot.command('bug', (ctx) => {
 });
 
 bot.command('help', (ctx) => {
-    ctx.reply(text.HELP)
-})
+    const userLang = userLanguages.get(ctx.from.id) || 'EN'; // Default to EN if no language is set
+    const langFilePath = `./src/config/lang/${userLang}.json`;
+    const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+    ctx.reply(langData.HELP);
+});
 
 bot.command('ping', (ctx) => {
     const start = new Date()
