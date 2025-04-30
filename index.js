@@ -107,6 +107,7 @@ bot.on('callback_query', (ctx) => {
 
     switch (query[0]) {
         case 'lang':
+            console.log('Language selection callback received:', query); // Debugging log
             const selectedLanguage = query[1];
             if (selectedLanguage === 'EN' || selectedLanguage === 'ID') {
                 ctx.reply(`Language set to ${selectedLanguage === 'EN' ? 'English' : 'Bahasa Indonesia'}`);
