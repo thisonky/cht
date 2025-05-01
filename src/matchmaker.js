@@ -1,246 +1,185 @@
-const Queue = require('./models/Queue')
-const Room = require('./models/Room')
+const { Telegram } = require('telegraf');
+const tg = new Telegram(process.env.BOT_TOKEN);
 
-const { Telegram } = require('telegraf')
-const tg = new Telegram(process.env.BOT_TOKEN)
+const { Markup } = require('telegraf');
 
-const { Markup } = require('telegraf')
-
-const text = require(`./config/lang/${process.env.LANGUAGE}`)
+const text = require(`./config/lang/${process.env.LANGUAGE}`);
+const ChatStatus = require('./models/ChatStatus');
 
 class MatchMaker {
-    async init() {
-        setInterval(async () => {
-            try {
-                console.log("Checking queue for pairing..."); // Debug log
-                const queues = await Queue.find({}).limit(2);
-                console.log("Current queue:", queues); // Debug log
-
-                if (queues.length === 2) {
-                    let newParticipan = [];
-                    for (const q of queues) {
-                        await Queue.deleteOne({ user_id: q.user_id });
-                        newParticipan.push(q.user_id);
-                    }
-                    console.log("Pairing users:", newParticipan); // Debug log
-                    this.createRoom(newParticipan);
-                }
-            } catch (err) {
-                console.error("Error in init method:", err);
-            }
-        }, 2000);
+    constructor() {
+        this.activeChats = {};
+        this.waitingUsers = [];
+        this.loadStatusFromDatabase();
     }
 
-    createRoom(newParticipan) {
-        let room = new Room({
-            participans: newParticipan,
-        });
+    async loadStatusFromDatabase() {
+        try {
+            const status = await ChatStatus.findOne();
+            if (status) {
+                this.activeChats = Object.fromEntries(status.activeChats);
+                this.waitingUsers = status.waitingUsers;
+            }
+        } catch (err) {
+            console.error('Error loading chat status from database:', err);
+        }
+    }
 
-        room.save(function (err, data) {
-            if (err) {
-                console.error("Error creating room:", err);
+    async saveStatusToDatabase() {
+        try {
+            await ChatStatus.findOneAndUpdate(
+                {},
+                {
+                    activeChats: this.activeChats,
+                    waitingUsers: this.waitingUsers,
+                },
+                { upsert: true }
+            );
+        } catch (err) {
+            console.error('Error saving chat status to database:', err);
+        }
+    }
+
+    async find(userID, langData) {
+        try {
+            if (this.activeChats[userID]) {
+                tg.sendMessage(userID, langData.FIND.WARNING_1);
                 return;
             }
 
-            console.log("Room created successfully:", data); // Debug log
-            newParticipan.forEach((id) => {
-                tg.sendMessage(id, text.CREATE_ROOM.SUCCESS_1).catch((err) => {
-                    console.error("Error sending message to user:", id, err);
-                });
-            });
-        });
-    }
+            if (!this.waitingUsers.includes(userID)) {
+                this.waitingUsers.push(userID);
+                tg.sendMessage(userID, langData.FIND.LOADING);
+                await this.saveStatusToDatabase();
+            }
 
-    async find(userID) {
-        try {
-            console.log("User attempting to find partner:", userID); // Debug log
-            const queueResult = await Queue.find({ user_id: userID });
-            if (queueResult.length > 0) {
-                await tg.sendMessage(userID, text.FIND.WARNING_1);
+            const partnerID = this.waitingUsers.find(id => id !== userID);
+            if (partnerID) {
+                this.waitingUsers = this.waitingUsers.filter(id => id !== userID && id !== partnerID);
+                this.activeChats[userID] = partnerID;
+                this.activeChats[partnerID] = userID;
+
+                tg.sendMessage(userID, langData.CREATE_ROOM.SUCCESS_1);
+                tg.sendMessage(partnerID, langData.CREATE_ROOM.SUCCESS_1);
+                await this.saveStatusToDatabase();
             } else {
-                const roomResult = await Room.find({ participans: userID });
-                if (roomResult.length > 0) {
-                    await tg.sendMessage(userID, text.FIND.WARNING_2);
-                } else {
-                    await tg.sendMessage(userID, text.FIND.LOADING);
-                    const queue = new Queue({ user_id: userID });
-                    await queue.save();
-                    console.log("User added to queue:", userID); // Debug log
-                }
+                tg.sendMessage(userID, langData.FIND.WARNING_2);
             }
         } catch (err) {
-            console.error("Error in find method:", err);
+            console.error('Error in find method:', err);
         }
     }
 
-    async next(userID) {
+    async stop(userID, langData) {
         try {
-            const doc = await Room.findOneAndDelete({ participans: userID });
-            if (doc) {
-                let participans = doc.participans;
-                for (const id of participans) {
-                    if (userID === id) {
-                        await tg.sendMessage(userID, text.NEXT.SUCCESS_1);
-                        await this.find(userID);
-                    } else {
-                        await tg.sendMessage(id, text.NEXT.SUCCESS_2);
-                    }
-                }
-            } else {
-                await tg.sendMessage(userID, text.NEXT.WARNING_1);
-            }
-        } catch (err) {
-            console.error('Error in next method:', err);
-        }
-    }
+            const partnerID = this.activeChats[userID];
+            if (partnerID) {
+                delete this.activeChats[userID];
+                delete this.activeChats[partnerID];
 
-    async stop(userID) {
-        try {
-            const doc = await Room.findOneAndDelete({ participans: userID });
-            if (doc) {
-                let participans = doc.participans;
-                for (const id of participans) {
-                    if (userID === id) {
-                        await tg.sendMessage(userID, text.STOP.SUCCESS_1);
-                    } else {
-                        await tg.sendMessage(id, text.STOP.SUCCESS_2);
-                    }
-                }
+                tg.sendMessage(userID, langData.STOP.SUCCESS_1);
+                tg.sendMessage(partnerID, langData.STOP.SUCCESS_2);
+                await this.saveStatusToDatabase();
             } else {
-                await tg.sendMessage(userID, text.STOP.WARNING_1);
+                tg.sendMessage(userID, langData.STOP.WARNING_1);
             }
         } catch (err) {
             console.error('Error in stop method:', err);
         }
     }
 
-    async exit(userID) {
+    async connect(userID, [type, data], langData) {
         try {
-            const doc = await Queue.findOneAndDelete({ user_id: userID });
-            if (doc) {
-                await tg.sendMessage(userID, text.EXIT.SUCCESS_1);
-            } else {
-                await tg.sendMessage(userID, text.EXIT.WARNING_1);
-            }
-        } catch (err) {
-            console.error('Error in exit method:', err);
-        }
-    }
-
-    async connect(userID, [type, data]) {
-        try {
-            const rooms = await Room.find({ participans: userID });
-
-            if (rooms.length > 0) {
-                let participans = rooms[0].participans;
-                let index = participans.indexOf(userID);
-                let partnerID = participans[index === 1 ? 0 : 1];
-
+            const partnerID = this.activeChats[userID];
+            if (partnerID) {
                 switch (type) {
                     case 'text':
-                        if (data.reply_to_message) {
-                            await this.#sendReply(partnerID, userID, data.text, data, 'sendMessage');
-                        } else {
-                            await tg.sendMessage(partnerID, data.text);
-                        }
+                        tg.sendMessage(partnerID, data.text);
                         break;
                     case 'sticker':
-                        if (data.reply_to_message) {
-                            await this.#sendReply(partnerID, userID, data.sticker.file_id, data, 'sendSticker');
-                        } else {
-                            await tg.sendSticker(partnerID, data.sticker.file_id);
-                        }
+                        tg.sendSticker(partnerID, data.sticker.file_id);
                         break;
                     case 'voice':
-                        if (data.reply_to_message) {
-                            await this.#sendReply(partnerID, userID, data.voice.file_id, data, 'sendVoice');
-                        } else {
-                            await tg.sendVoice(partnerID, data.voice.file_id);
-                        }
+                        tg.sendVoice(partnerID, data.voice.file_id);
                         break;
                     case 'photo':
-                        const urlPhoto = await tg.getFileLink(data);
-                        const photoName = urlPhoto.pathname.split('/photos/')[1];
-                        await tg.sendMessage(partnerID, text.USER_SEND_PHOTO.WARNING_1, 
-                            Markup.inlineKeyboard([
-                                [Markup.button.callback('Buka', 'openPhoto-' + String(photoName))],
-                            ])
-                        );
+                        tg.sendPhoto(partnerID, data);
                         break;
                     case 'video':
-                        const urlVideo = await tg.getFileLink(data);
-                        const videoName = urlVideo.pathname.split('/videos/')[1];
-                        await tg.sendMessage(partnerID, text.USER_SEND_VIDEO.WARNING_1, 
-                            Markup.inlineKeyboard([
-                                [Markup.button.callback('Buka', 'openVideo-' + String(videoName))],
-                            ])
-                        );
+                        tg.sendVideo(partnerID, data);
                         break;
                     default:
                         break;
                 }
             } else {
-                await tg.sendMessage(userID, text.CONNECT.WARNING_1);
+                tg.sendMessage(userID, langData.CONNECT.WARNING_1);
             }
         } catch (err) {
             console.error('Error in connect method:', err);
         }
     }
 
-    async currentActiveUser(userID) {
+    async next(userID, langData) {
         try {
-            let totalUserInRoom = await Room.countDocuments() * 2;
-            let totalUserInQueue = await Queue.countDocuments();
-            let totalUser = totalUserInRoom + totalUserInQueue;
-            let textAactiveUser = text.ACTIVE_USER
+            const partnerID = this.activeChats[userID];
+            if (partnerID) {
+                // Hapus pasangan aktif
+                delete this.activeChats[userID];
+                delete this.activeChats[partnerID];
+
+                // Kirim pesan ke kedua user
+                tg.sendMessage(userID, langData.NEXT.SUCCESS_1);
+                tg.sendMessage(partnerID, langData.NEXT.SUCCESS_2);
+
+                // Tambahkan user kembali ke waitingUsers
+                this.waitingUsers.push(userID);
+                this.waitingUsers.push(partnerID);
+
+                // Simpan status ke database
+                await this.saveStatusToDatabase();
+
+                // Cari partner baru untuk user
+                this.find(userID, langData);
+                this.find(partnerID, langData);
+            } else {
+                tg.sendMessage(userID, langData.NEXT.WARNING_1);
+            }
+        } catch (err) {
+            console.error('Error in next method:', err);
+        }
+    }
+
+    async exit(userID, langData) {
+        try {
+            // Hapus user dari waitingUsers jika ada
+            const index = this.waitingUsers.indexOf(userID);
+            if (index !== -1) {
+                this.waitingUsers.splice(index, 1);
+                tg.sendMessage(userID, langData.EXIT.SUCCESS_1);
+                await this.saveStatusToDatabase();
+            } else {
+                tg.sendMessage(userID, langData.EXIT.WARNING_1);
+            }
+        } catch (err) {
+            console.error('Error in exit method:', err);
+        }
+    }
+
+    async currentActiveUser(userID, langData) {
+        try {
+            const totalUserInRoom = Object.keys(this.activeChats).length / 2; // Setiap pasangan dihitung sekali
+            const totalUserInQueue = this.waitingUsers.length;
+            const totalUser = totalUserInRoom + totalUserInQueue;
+
+            const activeUserText = langData.ACTIVE_USER
                 .replace('${totalUser}', totalUser)
                 .replace('${totalUserInQueue}', totalUserInQueue)
                 .replace('${totalUserInRoom}', totalUserInRoom);
 
-            await tg.sendMessage(userID, textAactiveUser);
+            tg.sendMessage(userID, activeUserText);
         } catch (err) {
             console.error('Error in currentActiveUser method:', err);
         }
-    }
-
-    #forceStop(userID) {
-        Room.findOneAndDelete({ participans: userID }, (err, doc) => {
-            if (err) {
-                console.log(err);
-            } else {
-                if (doc) {
-                    let participans = doc.participans;
-                    participans.forEach((id) => {
-                        if (userID === id) {
-                            tg.sendMessage(userID, text.STOP.SUCCESS_2);
-                        }
-                    });
-                }
-            }
-        });
-    }
-
-    #errorWhenRoomActive({ response, on }, userID) {
-        console.log(response, on);
-        switch (response.error_code) {
-            case 403:
-                this.#forceStop(userID);
-                break;
-            default:
-                break;
-        }
-    }
-
-    #sendReply(partnerID, userID, dataToSend, dataReply, type) {
-        let { photo, video, message_id, from: { id } } = dataReply.reply_to_message;
-
-        let number = photo || video ? 2 : 1;
-        let replyToPlus = { reply_to_message_id: message_id + number };
-        let replyToMinus = { reply_to_message_id: message_id - number };
-
-        id == userID
-            ? tg[type](partnerID, dataToSend, replyToPlus)
-            : tg[type](partnerID, dataToSend, replyToMinus);
     }
 }
 

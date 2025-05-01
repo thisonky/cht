@@ -18,8 +18,6 @@ const userLanguages = new Map();
 const MatchMaker = require('./src/matchmaker')
 let Matchmaker = new MatchMaker()
 
-Matchmaker.init()
-
 bot.start((ctx) => {
     ctx.reply('Please select your language / Silakan pilih bahasa Anda:', {
         reply_markup: {
@@ -64,14 +62,16 @@ bot.command('find', (ctx) => {
     const userLang = userLanguages.get(ctx.from.id) || 'EN'; // Default to EN if no language is set
     const langFilePath = `./src/config/lang/${userLang}.json`;
     const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+
     let id = ctx.message.chat.id;
-    Matchmaker.find(id, langData); // Pass language data to Matchmaker
+    Matchmaker.find(id, langData); // Pass the language data to the method
 });
 
 bot.command('next', (ctx) => {
     const userLang = userLanguages.get(ctx.from.id) || 'EN';
     const langFilePath = `./src/config/lang/${userLang}.json`;
     const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+
     let id = ctx.message.chat.id;
     Matchmaker.next(id, langData);
 });
@@ -80,6 +80,7 @@ bot.command('stop', (ctx) => {
     const userLang = userLanguages.get(ctx.from.id) || 'EN';
     const langFilePath = `./src/config/lang/${userLang}.json`;
     const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+
     let id = ctx.message.chat.id;
     Matchmaker.stop(id, langData);
 });
@@ -88,12 +89,13 @@ bot.command('exit', (ctx) => {
     const userLang = userLanguages.get(ctx.from.id) || 'EN';
     const langFilePath = `./src/config/lang/${userLang}.json`;
     const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+
     let id = ctx.message.chat.id;
     Matchmaker.exit(id, langData);
 });
 
 bot.command('users', async (ctx) => {
-    const userLang = userLanguages.get(ctx.from.id) || 'EN';
+    const userLang = userLanguages.get(ctx.from.id) || 'EN'; // Default to EN if no language is set
     const langFilePath = `./src/config/lang/${userLang}.json`;
     const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
     const id = ctx.message.chat.id;
