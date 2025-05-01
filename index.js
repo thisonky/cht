@@ -61,27 +61,39 @@ bot.command('ping', (ctx) => {
 });
 
 bot.command('find', (ctx) => {
-    let id = ctx.message.chat.id
-    Matchmaker.find(id)
-})
+    const userLang = userLanguages.get(ctx.from.id) || 'EN'; // Default to EN if no language is set
+    const langFilePath = `./src/config/lang/${userLang}.json`;
+    const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+    let id = ctx.message.chat.id;
+    Matchmaker.find(id, langData); // Pass language data to Matchmaker
+});
 
-bot.command('next', (ctx) => { 
-    let id = ctx.message.chat.id
-    Matchmaker.next(id)
-})
+bot.command('next', (ctx) => {
+    const userLang = userLanguages.get(ctx.from.id) || 'EN';
+    const langFilePath = `./src/config/lang/${userLang}.json`;
+    const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+    let id = ctx.message.chat.id;
+    Matchmaker.next(id, langData);
+});
 
 bot.command('stop', (ctx) => {
-    let id = ctx.message.chat.id
-    Matchmaker.stop(id)
-})
+    const userLang = userLanguages.get(ctx.from.id) || 'EN';
+    const langFilePath = `./src/config/lang/${userLang}.json`;
+    const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+    let id = ctx.message.chat.id;
+    Matchmaker.stop(id, langData);
+});
 
 bot.command('exit', (ctx) => {
-    let id = ctx.message.chat.id
-    Matchmaker.exit(id)
-})
+    const userLang = userLanguages.get(ctx.from.id) || 'EN';
+    const langFilePath = `./src/config/lang/${userLang}.json`;
+    const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
+    let id = ctx.message.chat.id;
+    Matchmaker.exit(id, langData);
+});
 
 bot.command('users', async (ctx) => {
-    const userLang = userLanguages.get(ctx.from.id) || 'EN'; // Default to EN if no language is set
+    const userLang = userLanguages.get(ctx.from.id) || 'EN';
     const langFilePath = `./src/config/lang/${userLang}.json`;
     const langData = JSON.parse(fs.readFileSync(langFilePath, 'utf8'));
     const id = ctx.message.chat.id;

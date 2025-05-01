@@ -12,17 +12,21 @@ class MatchMaker {
     async init() {
         setInterval(async () => {
             try {
+                console.log("Checking queue for pairing..."); // Debug log
                 const queues = await Queue.find({}).limit(2);
+                console.log("Current queue:", queues); // Debug log
+
                 if (queues.length === 2) {
                     let newParticipan = [];
                     for (const q of queues) {
                         await Queue.deleteOne({ user_id: q.user_id });
                         newParticipan.push(q.user_id);
                     }
+                    console.log("Pairing users:", newParticipan); // Debug log
                     this.createRoom(newParticipan);
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Error in init method:", err);
             }
         }, 2000);
     }
@@ -31,19 +35,25 @@ class MatchMaker {
         let room = new Room({
             participans: newParticipan,
         });
-        
-        room.save(function(err, data) {
-            if(err) return console.error(err)
 
-            newParticipan.forEach(id => {
-                tg.sendMessage(id, text.CREATE_ROOM.SUCCESS_1)
+        room.save(function (err, data) {
+            if (err) {
+                console.error("Error creating room:", err);
+                return;
+            }
+
+            console.log("Room created successfully:", data); // Debug log
+            newParticipan.forEach((id) => {
+                tg.sendMessage(id, text.CREATE_ROOM.SUCCESS_1).catch((err) => {
+                    console.error("Error sending message to user:", id, err);
+                });
             });
-            console.log(data)
         });
     }
 
     async find(userID) {
         try {
+            console.log("User attempting to find partner:", userID); // Debug log
             const queueResult = await Queue.find({ user_id: userID });
             if (queueResult.length > 0) {
                 await tg.sendMessage(userID, text.FIND.WARNING_1);
@@ -55,26 +65,27 @@ class MatchMaker {
                     await tg.sendMessage(userID, text.FIND.LOADING);
                     const queue = new Queue({ user_id: userID });
                     await queue.save();
+                    console.log("User added to queue:", userID); // Debug log
                 }
             }
         } catch (err) {
-            console.error('Error in find method:', err);
+            console.error("Error in find method:", err);
         }
     }
 
     async next(userID) {
         try {
-            const doc = await Room.findOneAndDelete({ participans: userID }); // Use async/await
+            const doc = await Room.findOneAndDelete({ participans: userID });
             if (doc) {
                 let participans = doc.participans;
-                participans.forEach(async (id) => {
+                for (const id of participans) {
                     if (userID === id) {
                         await tg.sendMessage(userID, text.NEXT.SUCCESS_1);
                         await this.find(userID);
                     } else {
                         await tg.sendMessage(id, text.NEXT.SUCCESS_2);
                     }
-                });
+                }
             } else {
                 await tg.sendMessage(userID, text.NEXT.WARNING_1);
             }
@@ -85,16 +96,16 @@ class MatchMaker {
 
     async stop(userID) {
         try {
-            const doc = await Room.findOneAndDelete({ participans: userID }); // Use async/await
+            const doc = await Room.findOneAndDelete({ participans: userID });
             if (doc) {
                 let participans = doc.participans;
-                participans.forEach(async (id) => {
+                for (const id of participans) {
                     if (userID === id) {
                         await tg.sendMessage(userID, text.STOP.SUCCESS_1);
                     } else {
                         await tg.sendMessage(id, text.STOP.SUCCESS_2);
                     }
-                });
+                }
             } else {
                 await tg.sendMessage(userID, text.STOP.WARNING_1);
             }
@@ -105,7 +116,7 @@ class MatchMaker {
 
     async exit(userID) {
         try {
-            const doc = await Queue.findOneAndDelete({ user_id: userID }); // Use async/await
+            const doc = await Queue.findOneAndDelete({ user_id: userID });
             if (doc) {
                 await tg.sendMessage(userID, text.EXIT.SUCCESS_1);
             } else {
@@ -118,7 +129,7 @@ class MatchMaker {
 
     async connect(userID, [type, data]) {
         try {
-            const rooms = await Room.find({ participans: userID }); // Use async/await
+            const rooms = await Room.find({ participans: userID });
 
             if (rooms.length > 0) {
                 let participans = rooms[0].participans;
@@ -177,39 +188,43 @@ class MatchMaker {
     }
 
     async currentActiveUser(userID) {
-        let totalUserInRoom = await Room.countDocuments() * 2
-        let totalUserInQueue = await Queue.countDocuments()
-        let totalUser = totalUserInRoom + totalUserInQueue
-        let textAactiveUser = text.ACTIVE_USER
-            .replace('${totalUser}', totalUser)
-            .replace('${totalUserInQueue}', totalUserInQueue)
-            .replace('${totalUserInRoom}', totalUserInRoom)
+        try {
+            let totalUserInRoom = await Room.countDocuments() * 2;
+            let totalUserInQueue = await Queue.countDocuments();
+            let totalUser = totalUserInRoom + totalUserInQueue;
+            let textAactiveUser = text.ACTIVE_USER
+                .replace('${totalUser}', totalUser)
+                .replace('${totalUserInQueue}', totalUserInQueue)
+                .replace('${totalUserInRoom}', totalUserInRoom);
 
-        tg.sendMessage(userID, textAactiveUser)
+            await tg.sendMessage(userID, textAactiveUser);
+        } catch (err) {
+            console.error('Error in currentActiveUser method:', err);
+        }
     }
 
     #forceStop(userID) {
-        Room.findOneAndDelete({participans: userID}, (err, doc) => {
-            if(err) {
-                console.log(err)
-            }else {
-                if(doc) {
-                    let participans = doc.participans
-                    participans.forEach(id => {
-                        if(userID === id) {
-                            tg.sendMessage(userID, text.STOP.SUCCESS_2)
+        Room.findOneAndDelete({ participans: userID }, (err, doc) => {
+            if (err) {
+                console.log(err);
+            } else {
+                if (doc) {
+                    let participans = doc.participans;
+                    participans.forEach((id) => {
+                        if (userID === id) {
+                            tg.sendMessage(userID, text.STOP.SUCCESS_2);
                         }
-                    })
+                    });
                 }
             }
-        })
+        });
     }
 
-    #errorWhenRoomActive({response, on}, userID) {
-        console.log(response, on)
+    #errorWhenRoomActive({ response, on }, userID) {
+        console.log(response, on);
         switch (response.error_code) {
             case 403:
-                this.#forceStop(userID)
+                this.#forceStop(userID);
                 break;
             default:
                 break;
@@ -217,17 +232,16 @@ class MatchMaker {
     }
 
     #sendReply(partnerID, userID, dataToSend, dataReply, type) {
-        let {photo, video, message_id, from: {id} } = dataReply.reply_to_message
+        let { photo, video, message_id, from: { id } } = dataReply.reply_to_message;
 
-        let number = photo || video ? 2 : 1
-        let replyToPlus =  { reply_to_message_id : message_id + number }
-        let replyToMinus =  { reply_to_message_id : message_id - number }
+        let number = photo || video ? 2 : 1;
+        let replyToPlus = { reply_to_message_id: message_id + number };
+        let replyToMinus = { reply_to_message_id: message_id - number };
 
-        id == userID ? 
-            tg[type](partnerID, dataToSend, replyToPlus) : 
-            tg[type](partnerID, dataToSend, replyToMinus)
+        id == userID
+            ? tg[type](partnerID, dataToSend, replyToPlus)
+            : tg[type](partnerID, dataToSend, replyToMinus);
     }
-
 }
 
-module.exports = MatchMaker
+module.exports = MatchMaker;
